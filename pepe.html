@@ -1,0 +1,231 @@
+import React, { useState } from "react";
+import {
+  CheckCircle,
+  XCircle,
+  Trophy,
+  RotateCcw,
+  Target,
+  Zap,
+} from "lucide-react";
+
+const UltimateChemGame = () => {
+  const [gameMode, setGameMode] = useState("menu");
+  const [score, setScore] = useState(0);
+  const [totalQuestions, setTotalQuestions] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [feedback, setFeedback] = useState("");
+  const [streak, setStreak] = useState(0);
+  const [usedQuestions, setUsedQuestions] = useState([]);
+  const [bestStreak, setBestStreak] = useState(0);
+
+  // ✅ Question Data
+  const questions = {
+    atomic_structure: [
+      {
+        q: "An atom has 19 protons and 20 neutrons. What is its mass number?",
+        a: "39",
+        options: ["19", "20", "39", "40"],
+      },
+      {
+        q: "If an atom has atomic number 17, how many protons does it have?",
+        a: "17",
+        options: ["8", "17", "35", "52"],
+      },
+    ],
+    periodic_table: [
+      {
+        q: "What is the symbol for Sodium?",
+        a: "Na",
+        options: ["Na", "S", "So", "N"],
+      },
+      {
+        q: "Which element is a Noble Gas?",
+        a: "Neon (Ne)",
+        options: ["Fluorine (F)", "Neon (Ne)", "Oxygen (O)", "Nitrogen (N)"],
+      },
+    ],
+  };
+
+  // ✅ Select Random Question
+  const getRandomQuestion = (mode) => {
+    const modeQuestions = questions[mode];
+    if (!modeQuestions) return;
+    if (usedQuestions.length >= modeQuestions.length) {
+      setUsedQuestions([]);
+    }
+
+    const available = modeQuestions.filter(
+      (_, i) => !usedQuestions.includes(i)
+    );
+    const randomQ =
+      available[Math.floor(Math.random() * available.length)] ||
+      modeQuestions[0];
+    const index = modeQuestions.indexOf(randomQ);
+
+    setCurrentQuestion(randomQ);
+    setUsedQuestions((prev) => [...prev, index]);
+    setFeedback("");
+  };
+
+  // ✅ Handle Answer
+  const handleAnswer = (answer) => {
+    setTotalQuestions((prev) => prev + 1);
+    if (answer === currentQuestion.a) {
+      setScore((prev) => prev + 1);
+      setStreak((prev) => {
+        const newStreak = prev + 1;
+        if (newStreak > bestStreak) setBestStreak(newStreak);
+        return newStreak;
+      });
+      setFeedback("correct");
+      setTimeout(() => getRandomQuestion(gameMode), 1000);
+    } else {
+      setStreak(0);
+      setFeedback("wrong");
+      setTimeout(() => getRandomQuestion(gameMode), 1500);
+    }
+  };
+
+  // ✅ Start Game
+  const startGame = (mode) => {
+    setGameMode(mode);
+    setScore(0);
+    setTotalQuestions(0);
+    setStreak(0);
+    setUsedQuestions([]);
+    getRandomQuestion(mode);
+  };
+
+  // ✅ Reset Game
+  const resetGame = () => {
+    setGameMode("menu");
+    setScore(0);
+    setTotalQuestions(0);
+    setStreak(0);
+    setCurrentQuestion(null);
+    setFeedback("");
+    setUsedQuestions([]);
+  };
+
+  const percentage =
+    totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0;
+
+  // ✅ Render
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-blue-900 via-indigo-900 to-black text-white flex flex-col items-center p-6">
+      <h1 className="text-5xl font-bold mb-6 text-center tracking-wide">
+        ⚛️ Ultimate Chemistry Quiz Game ⚛️
+      </h1>
+
+      {/* 🧭 Main Menu */}
+      {gameMode === "menu" && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-8">
+          {Object.keys(questions).map((mode) => (
+            <button
+              key={mode}
+              onClick={() => startGame(mode)}
+              className="bg-white/10 hover:bg-white/20 backdrop-blur-md text-xl font-semibold rounded-2xl p-6 shadow-xl border border-white/20 transition-all hover:scale-105"
+            >
+              {mode.replace(/_/g, " ").toUpperCase()}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* 🧪 Game Mode */}
+      {gameMode !== "menu" && currentQuestion && (
+        <div className="bg-white/10 backdrop-blur-md p-8 rounded-3xl mt-6 w-full max-w-3xl shadow-2xl border border-white/20">
+          <div className="flex justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Zap className="text-yellow-400" />
+              <p className="text-lg font-semibold">Streak: {streak}</p>
+            </div>
+            <p className="text-lg">Best: {bestStreak}</p>
+          </div>
+
+          <h2 className="text-2xl font-bold mb-6 text-center">
+            {currentQuestion.q}
+          </h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {currentQuestion.options.map((opt, i) => (
+              <button
+                key={i}
+                onClick={() => handleAnswer(opt)}
+                className={`p-4 rounded-2xl font-semibold border transition-all ${
+                  feedback === "correct" && opt === currentQuestion.a
+                    ? "bg-green-600 border-green-400 scale-105"
+                    : feedback === "wrong" && opt === currentQuestion.a
+                    ? "bg-blue-600 border-blue-400"
+                    : feedback === "wrong"
+                    ? "opacity-50"
+                    : "bg-white/10 hover:bg-white/20 border-white/30 hover:scale-105"
+                }`}
+                disabled={feedback !== ""}
+              >
+                {opt}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex justify-between items-center mt-8">
+            <button
+              onClick={resetGame}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 px-5 py-2 rounded-2xl font-semibold transition-all shadow-lg"
+            >
+              <RotateCcw size={18} /> Quit
+            </button>
+            <div className="text-center">
+              <p className="text-lg">
+                Score: {score} / {totalQuestions}
+              </p>
+              <p className="text-sm opacity-70">Accuracy: {percentage}%</p>
+            </div>
+          </div>
+
+          {feedback === "correct" && (
+            <div className="mt-6 text-center text-green-400 font-bold text-2xl flex justify-center items-center gap-2">
+              <CheckCircle size={32} /> Correct!
+            </div>
+          )}
+          {feedback === "wrong" && (
+            <div className="mt-6 text-center text-red-400 font-bold text-2xl flex justify-center items-center gap-2">
+              <XCircle size={32} /> Wrong! Correct answer: {currentQuestion.a}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 🏆 Results */}
+      <div className="mt-12">
+        {totalQuestions >= 10 && percentage >= 90 && (
+          <div className="text-center">
+            <Trophy className="mx-auto text-yellow-400 mb-3" size={64} />
+            <h3 className="text-3xl font-bold mb-2">Chemistry Champion!</h3>
+            <p className="text-lg">
+              You mastered this topic with {percentage}% accuracy! 🔥
+            </p>
+          </div>
+        )}
+
+        {totalQuestions >= 5 && percentage < 70 && (
+          <div className="mt-8 text-center">
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 text-white shadow-2xl">
+              <Target className="mx-auto mb-3 text-yellow-300" size={64} />
+              <h3 className="text-3xl font-bold mb-2">Keep Going!</h3>
+              <p className="text-lg">
+                You’re scoring {percentage}% so far — review the tricky topics
+                and try again!
+              </p>
+              <p className="mt-2 text-sm opacity-80">
+                Every mistake helps you learn. 🔬
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default UltimateChemGame;
